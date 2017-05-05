@@ -3,6 +3,8 @@
  * Description: a grpc promisify hack module
  */
 
+const grpc = require('grpc');
+
 /**
  * promisify
  * @param client grpc client
@@ -19,12 +21,18 @@ function promisify(client) {
       }
 
       return new Promise((resolve, reject) => {
-        originalFunction.call(client, request, (error, response) => {
+        grpc.waitForClientReady(client, Infinity, function (error) {
           if (error) {
             reject(error);
-          } else {
-            resolve(response);
+            return;
           }
+          originalFunction.call(client, request, (error, response) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(response);
+            }
+          });
         });
       });
     };
